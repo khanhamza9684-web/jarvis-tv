@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/jarvis_black"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Wallpaper (two layers so we can cross-fade; container slowly drifts like an aerial) -->
+    <FrameLayout
+        android:id="@+id/wallpaperContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/wallpaperBack"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <ImageView
+            android:id="@+id/wallpaperFront"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_gravity="top"
+        android:background="@drawable/scrim_top" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="260dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/scrim_bottom" />
+
+    <!-- Greeting -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="64dp"
+        android:layout_marginTop="40dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/greeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:shadowColor="#99000000"
+            android:shadowRadius="12"
+            android:textColor="@color/text_primary"
+            android:textSize="34sp" />
+
+        <TextView
+            android:id="@+id/dateView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:shadowColor="#99000000"
+            android:shadowRadius="8"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Clock + Jarvis button -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="36dp"
+        android:layout_marginEnd="64dp"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextClock
+            android:id="@+id/clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-light"
+            android:format12Hour="h:mm"
+            android:format24Hour="HH:mm"
+            android:shadowColor="#99000000"
+            android:shadowRadius="12"
+            android:textColor="@color/text_primary"
+            android:textSize="34sp" />
+
+        <LinearLayout
+            android:id="@+id/jarvisButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginStart="32dp"
+            android:background="@drawable/pill_bg"
+            android:clickable="true"
+            android:defaultFocusHighlightEnabled="false"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="24dp">
+
+            <View
+                android:id="@+id/jarvisOrb"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/orb" />
+
+            <TextView
+                android:id="@+id/jarvisLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/assistant_name"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- What Jarvis hears / says -->
+    <TextView
+        android:id="@+id/jarvisCaption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="120dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="120dp"
+        android:alpha="0"
+        android:fontFamily="sans-serif-light"
+        android:gravity="center"
+        android:shadowColor="#CC000000"
+        android:shadowRadius="16"
+        android:textColor="@color/text_primary"
+        android:textSize="32sp" />
+
+    <!-- App row -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/appRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="40dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingStart="54dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="54dp"
+        android:paddingBottom="56dp" />
+</FrameLayout>

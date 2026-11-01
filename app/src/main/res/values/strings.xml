@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Jarvis Home</string>
+    <string name="assistant_name">Jarvis</string>
+    <string name="listening">Listening…</string>
+</resources>

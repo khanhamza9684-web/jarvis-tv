@@ -1,0 +1,7 @@
+# OPTIONAL. Android Studio creates local.properties for you (with sdk.dir);
+# add these two lines to it to give Jarvis open-ended answers.
+# Without a key, every device command (open apps, volume, time, search...) still works.
+#
+# The key is compiled into the APK, so only use this on your own TV.
+anthropic.api.key=
+anthropic.model=claude-haiku-5-5
