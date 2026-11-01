@@ -4,14 +4,14 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.os.Environment
 import androidx.core.content.ContextCompat
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
 
 /**
- * Cycles through the bundled wallpapers. If you push your own image to
- *   /sdcard/Android/data/com.jarvis.launcher/files/Pictures/wallpaper.jpg   (or .png)
- * it becomes the first wallpaper in the cycle.
+ * Cycles through your own wallpapers (newest first) and then the bundled ones.
+ * Your wallpapers are added from the phone-upload page (see UploadServer).
  */
 class WallpaperProvider(private val context: Context) {
 
@@ -23,14 +23,14 @@ class WallpaperProvider(private val context: Context) {
         R.drawable.wallpaper_nebula
     )
 
-    private fun customFile(): File? {
-        val dir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: return null
-        return listOf("wallpaper.jpg", "wallpaper.jpeg", "wallpaper.png")
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-    }
+    private fun dir(): File = File(context.filesDir, "wallpapers").apply { mkdirs() }
 
-    private fun count(): Int = bundled.size + if (customFile() != null) 1 else 0
+    private fun customFiles(): List<File> =
+        dir().listFiles { f -> f.isFile && f.extension == "jpg" }
+            ?.sortedByDescending { it.lastModified() }
+            ?: emptyList()
+
+    private fun count(): Int = bundled.size + customFiles().size
 
     fun current(): Drawable = drawableAt(prefs.getInt("index", 0).mod(count()))
 
@@ -40,31 +40,76 @@ class WallpaperProvider(private val context: Context) {
         return drawableAt(idx)
     }
 
-    private fun drawableAt(index: Int): Drawable {
-        val custom = customFile()
-        if (custom != null) {
-            if (index == 0) {
-                decode(custom)?.let { return it }
+    /** Jump to the most recently added wallpaper. */
+    fun showNewest(): Drawable {
+        prefs.edit().putInt("index", 0).apply()
+        return current()
+    }
+
+    /** Saves an uploaded image. Returns false if it isn't a readable image. */
+    @Synchronized
+    fun saveFrom(input: InputStream): Boolean {
+        val d = dir()
+        val tmp = File(d, "incoming.tmp")
+        return try {
+            tmp.outputStream().use { input.copyTo(it) }
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(tmp.path, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+                tmp.delete()
+                false
             } else {
-                return bundledAt(index - 1)
+                val dest = File(d, "wp_${System.currentTimeMillis()}.jpg")
+                if (!tmp.renameTo(dest)) {
+                    tmp.delete()
+                    false
+                } else {
+                    customFiles().drop(MAX_CUSTOM).forEach { it.delete() }
+                    true
+                }
             }
+        } catch (e: IOException) {
+            tmp.delete()
+            false
         }
-        return bundledAt(if (custom != null) 0 else index)
+    }
+
+    @Synchronized
+    fun clearCustom() {
+        customFiles().forEach { it.delete() }
+        prefs.edit().putInt("index", 0).apply()
+    }
+
+    private fun drawableAt(index: Int): Drawable {
+        val custom = customFiles()
+        if (index < custom.size) {
+            decode(custom[index])?.let { return it }
+            return bundledAt(0)
+        }
+        return bundledAt(index - custom.size)
     }
 
     private fun bundledAt(i: Int): Drawable =
         ContextCompat.getDrawable(context, bundled[i.mod(bundled.size)])!!
 
-    private fun decode(file: File): Drawable? = try {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.path, bounds)
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= 1920 && bounds.outHeight / (sample * 2) >= 1080) {
-            sample *= 2
+    private fun decode(file: File): Drawable? {
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.path, bounds)
+            var sample = 1
+            while (bounds.outWidth / (sample * 2) >= 1920 && bounds.outHeight / (sample * 2) >= 1080) {
+                sample *= 2
+            }
+            val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+            BitmapFactory.decodeFile(file.path, opts)?.let { BitmapDrawable(context.resources, it) }
+        } catch (e: Exception) {
+            null
+        } catch (e: OutOfMemoryError) {
+            null
         }
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        BitmapFactory.decodeFile(file.path, opts)?.let { BitmapDrawable(context.resources, it) }
-    } catch (e: Exception) {
-        null
+    }
+
+    private companion object {
+        const val MAX_CUSTOM = 10
     }
 }

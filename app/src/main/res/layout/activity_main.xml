@@ -93,6 +93,22 @@
             android:textColor="@color/text_primary"
             android:textSize="34sp" />
 
+        <TextView
+            android:id="@+id/customizeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginStart="32dp"
+            android:background="@drawable/pill_bg"
+            android:clickable="true"
+            android:defaultFocusHighlightEnabled="false"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="Customize"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp" />
+
         <LinearLayout
             android:id="@+id/jarvisButton"
             android:layout_width="wrap_content"
@@ -140,6 +156,20 @@
         android:shadowRadius="16"
         android:textColor="@color/text_primary"
         android:textSize="32sp" />
+
+    <!-- Big name of the focused app, tvOS style -->
+    <TextView
+        android:id="@+id/heroTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="64dp"
+        android:layout_marginBottom="250dp"
+        android:fontFamily="sans-serif-medium"
+        android:shadowColor="#CC000000"
+        android:shadowRadius="16"
+        android:textColor="@color/text_primary"
+        android:textSize="44sp" />
 
     <!-- App row -->
     <androidx.recyclerview.widget.RecyclerView

@@ -52,6 +52,7 @@ class Jarvis(private val activity: Activity, private val host: Host) {
 
     private val main = Handler(Looper.getMainLooper())
     private val ai = AiClient(BuildConfig.ANTHROPIC_API_KEY, BuildConfig.ANTHROPIC_MODEL)
+    private val voicePrefs = activity.getSharedPreferences("jarvis_voice", Context.MODE_PRIVATE)
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var recognizer: SpeechRecognizer? = null
@@ -65,6 +66,7 @@ class Jarvis(private val activity: Activity, private val host: Host) {
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                     engine.setLanguage(Locale.US)
                 }
+                applySavedVoice(engine)
                 engine.setPitch(Config.TTS_PITCH)
                 engine.setSpeechRate(Config.TTS_RATE)
                 engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
@@ -81,6 +83,42 @@ class Jarvis(private val activity: Activity, private val host: Host) {
                 ttsReady = true
             }
         }
+    }
+
+    // ---------------------------------------------------------------- voice
+
+    private fun englishVoices(engine: TextToSpeech) = try {
+        engine.voices.orEmpty()
+            .filter { !it.isNetworkConnectionRequired && it.locale.language == "en" }
+            .sortedBy { it.name }
+    } catch (e: Exception) {
+        emptyList()
+    }
+
+    /** Uses the voice you picked last time, else a British English one (very Jarvis). */
+    private fun applySavedVoice(engine: TextToSpeech) {
+        val voices = englishVoices(engine)
+        val saved = voicePrefs.getString("voice", null)
+        val pick = voices.firstOrNull { it.name == saved }
+            ?: voices.firstOrNull { it.locale.country == "GB" }
+        if (pick != null) engine.setVoice(pick)
+    }
+
+    /** Cycles through the English voices installed on the TV and remembers the choice. */
+    fun nextVoice() {
+        val engine = tts ?: return
+        val voices = if (ttsReady) englishVoices(engine) else emptyList()
+        if (voices.size < 2) {
+            say("I only have one voice available on this TV.")
+            return
+        }
+        val i = voices.indexOfFirst { it.name == engine.voice?.name }
+        val next = voices[(i + 1).mod(voices.size)]
+        engine.setVoice(next)
+        engine.setPitch(Config.TTS_PITCH)
+        engine.setSpeechRate(Config.TTS_RATE)
+        voicePrefs.edit().putString("voice", next.name).apply()
+        say("This is my new voice. Say change voice to hear another.")
     }
 
     // ---------------------------------------------------------------- listening
@@ -203,6 +241,9 @@ class Jarvis(private val activity: Activity, private val host: Host) {
                 val date = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
                 say("Today is $date.")
             }
+
+            Regex("\\b(change|switch|next|different|another)\\b.*\\bvoice\\b").containsMatchIn(text) ->
+                nextVoice()
 
             Regex("\\b(next|change|switch)\\b.*\\b(wallpaper|background)\\b").containsMatchIn(text) -> {
                 host.nextWallpaper()

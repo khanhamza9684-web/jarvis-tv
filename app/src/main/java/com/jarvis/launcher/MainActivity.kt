@@ -21,6 +21,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -48,6 +49,11 @@ class MainActivity : AppCompatActivity(), Jarvis.Host {
     private lateinit var jarvisLabel: TextView
     private lateinit var jarvisOrb: View
     private lateinit var caption: TextView
+    private lateinit var heroTitle: TextView
+    private lateinit var customizeButton: TextView
+    private var uploadServer: UploadServer? = null
+    private var uploadDialog: AlertDialog? = null
+    private var uploadUrl = ""
 
     private val main = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor()
@@ -88,6 +94,8 @@ class MainActivity : AppCompatActivity(), Jarvis.Host {
         jarvisLabel = findViewById(R.id.jarvisLabel)
         jarvisOrb = findViewById(R.id.jarvisOrb)
         caption = findViewById(R.id.jarvisCaption)
+        heroTitle = findViewById(R.id.heroTitle)
+        customizeButton = findViewById(R.id.customizeButton)
 
         adapter = AppAdapter(::launch, ::showAppInfo, ::centerOn)
         appRow.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -99,6 +107,11 @@ class MainActivity : AppCompatActivity(), Jarvis.Host {
         jarvisButton.setOnClickListener { jarvis.startListening() }
         jarvisButton.setOnFocusChangeListener { _, focused ->
             jarvisLabel.setTextColor(if (focused) Color.BLACK else Color.WHITE)
+        }
+
+        customizeButton.setOnClickListener { showCustomize() }
+        customizeButton.setOnFocusChangeListener { _, focused ->
+            customizeButton.setTextColor(if (focused) Color.BLACK else Color.WHITE)
         }
 
         // Back never leaves the launcher; it just returns to the first app.
@@ -141,6 +154,7 @@ class MainActivity : AppCompatActivity(), Jarvis.Host {
             // not registered
         }
         jarvis.stop()
+        stopUpload()
         super.onStop()
     }
 
@@ -221,9 +235,82 @@ class MainActivity : AppCompatActivity(), Jarvis.Host {
     }
 
     /** Keep the focused tile in the middle of the screen, like tvOS. */
-    private fun centerOn(view: View) {
+    private fun centerOn(view: View, app: AppEntry) {
+        heroTitle.text = app.label
+        heroTitle.alpha = 0.35f
+        heroTitle.animate().alpha(1f).setDuration(220).start()
         val dx = (view.left + view.width / 2) - appRow.width / 2
         if (dx != 0) appRow.smoothScrollBy(dx, 0)
+    }
+
+    // ------------------------------------------------------------------ customize
+
+    private fun showCustomize() {
+        val items = arrayOf(
+            "Add a wallpaper from my phone",
+            "Next wallpaper",
+            "Remove my wallpapers",
+            "Change Jarvis's voice"
+        )
+        AlertDialog.Builder(this, androidx.appcompat.R.style.Theme_AppCompat_Dialog_Alert)
+            .setTitle("Customize")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> startPhoneUpload()
+                    1 -> nextWallpaper()
+                    2 -> {
+                        wallpapers.clearCustom()
+                        crossfadeTo(wallpapers.current())
+                    }
+                    3 -> jarvis.nextVoice()
+                }
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun startPhoneUpload() {
+        stopUpload()
+        val ip = localIpAddress()
+        if (ip == null) {
+            Toast.makeText(this, "Connect the TV to Wi-Fi or Ethernet first", Toast.LENGTH_LONG).show()
+            return
+        }
+        val token = (1000..9999).random().toString()
+        val server = UploadServer(token) { stream ->
+            val ok = wallpapers.saveFrom(stream)
+            if (ok) runOnUiThread { onWallpaperUploaded() }
+            ok
+        }
+        val port = server.start()
+        if (port == 0) {
+            Toast.makeText(this, "Couldn't start the upload page", Toast.LENGTH_LONG).show()
+            return
+        }
+        uploadServer = server
+        uploadUrl = "http://$ip:$port/$token"
+        uploadDialog = AlertDialog.Builder(this, androidx.appcompat.R.style.Theme_AppCompat_Dialog_Alert)
+            .setTitle("Add a wallpaper from your phone")
+            .setMessage(
+                "1. Connect your phone to the same Wi-Fi as this TV.\n" +
+                    "2. Open this address in your phone's browser:\n\n$uploadUrl\n\n" +
+                    "3. Choose a landscape photo."
+            )
+            .setPositiveButton("Done", null)
+            .setOnDismissListener { stopUpload() }
+            .show()
+    }
+
+    private fun onWallpaperUploaded() {
+        if (isDestroyed) return
+        crossfadeTo(wallpapers.showNewest())
+        uploadDialog?.setMessage("Wallpaper added! Send another from the same page, or press Done.\n\n$uploadUrl")
+    }
+
+    private fun stopUpload() {
+        uploadServer?.stop()
+        uploadServer = null
+        uploadDialog = null
     }
 
     // ------------------------------------------------------------------ greeting + wallpaper

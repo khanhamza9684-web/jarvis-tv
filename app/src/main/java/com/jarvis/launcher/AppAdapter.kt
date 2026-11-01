@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 class AppAdapter(
     private val onClick: (AppEntry) -> Unit,
     private val onLongClick: (AppEntry) -> Unit,
-    private val onFocused: (View) -> Unit
+    private val onFocused: (View, AppEntry) -> Unit
 ) : RecyclerView.Adapter<AppAdapter.Holder>() {
 
     private var items: List<AppEntry> = emptyList()
@@ -46,15 +46,17 @@ class AppAdapter(
         private val label: TextView = view.findViewById(R.id.label)
         private val density = view.resources.displayMetrics.density
         private val interpolator = DecelerateInterpolator()
+        private var current: AppEntry? = null
 
         init {
             view.setOnFocusChangeListener { v, focused ->
                 applyFocus(focused, animate = true)
-                if (focused) onFocused(v)
+                if (focused) current?.let { onFocused(v, it) }
             }
         }
 
         fun bind(entry: AppEntry) {
+            current = entry
             label.text = entry.label
             if (entry.banner != null) {
                 banner.setImageDrawable(entry.banner)

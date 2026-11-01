@@ -5,7 +5,7 @@ An Apple TV-inspired home screen for Google TV / Android TV, with an assistant c
 ## What you get
 
 - **tvOS-style app row.** Tiles lift, scale up and shine when focused. The app name fades in underneath, and the focused tile stays centred as you scroll.
-- **Wallpapers.** Three bundled (Dusk Ridge, Aurora, Nebula) with a slow aerial-style drift and cross-fade. You can add your own (see below).
+- **Wallpapers.** Three bundled (Dusk Ridge, Aurora, Nebula) with a slow aerial-style drift and cross-fade. Add your own from your phone (see below).
 - **Jarvis.** Select the pill at the top right, or press the remote's search/assist key if it reaches the app. He listens, shows what he hears, and answers out loud.
 - **Smart ordering.** The apps you use most move to the front the next time the launcher starts.
 - **Long-press an app** to open its system info page (uninstall, permissions).
@@ -88,15 +88,17 @@ Trade-offs of replacing the stock launcher:
 - Many remotes' dedicated **Assistant** button is handled by the system and goes to Google Assistant, never reaching this app. Use the on-screen Jarvis button instead.
 - "Volume" changes the TV box's own volume. If your sound goes through HDMI-CEC or ARC, the TV or soundbar may ignore it.
 
-## Your own wallpaper
+## Your own wallpaper (no computer needed)
 
-Push any JPG or PNG (1920x1080 or larger works best) to the app's private folder:
+1. On the TV, select **Customize** (top right) > **Add a wallpaper from my phone**.
+2. The TV shows an address like `http://192.168.1.20:8080/4821`. Open it in your phone's browser (same Wi-Fi).
+3. Choose a landscape photo. It appears on the TV straight away and is kept for next time.
 
-```
-adb push my_wallpaper.jpg /sdcard/Android/data/com.jarvis.launcher/files/Pictures/wallpaper.jpg
-```
+Say "next wallpaper" to cycle. Your last 10 uploads are kept. **Customize > Remove my wallpapers** deletes them.
 
-It becomes the first wallpaper after the next launch. Say "next wallpaper" to cycle.
+## Change Jarvis's voice
+
+Say "change voice" (or **Customize > Change Jarvis's voice**) to cycle through the English voices installed on your TV. Jarvis remembers your pick and defaults to a British voice. To get more voices, install or update *Speech Services by Google* on the TV. Pitch and speed are in `Config.kt`.
 
 ## Customise
 
